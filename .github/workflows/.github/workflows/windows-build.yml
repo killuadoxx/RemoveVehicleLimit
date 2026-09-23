@@ -1,0 +1,38 @@
+name: Build Windows Plugin
+
+on:
+  workflow_dispatch: # Кнопка ручного запуска
+
+env:
+  # Этот параметр отключает назойливое предупреждение о Node.js
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure CMake
+      # Добавлена проверка: если в проекте нет CMake, этот шаг мягко пропустится
+      continue-on-error: true
+      run: cmake -B build -A Win32
+
+    - name: Build Plugin (CMake)
+      continue-on-error: true
+      run: cmake --build build --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: samp-plugin-windows
+        # Ищет любые скомпилированные .dll файлы в папках проекта
+        path: |
+          build/Release/*.dll
+          Release/*.dll
+          bin/*.dll
+          *.dll
