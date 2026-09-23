@@ -1,7 +1,10 @@
 name: Build Windows Plugin
 
 on:
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой
+  workflow_dispatch:
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build:
@@ -11,16 +14,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive # Скачает сторонние зависимости плагина, если они есть
+        submodules: recursive
 
-    - name: Configure CMake
-      run: cmake -B build -A Win32 # SAMP-плагины почти всегда 32-битные (Win32)
+    - name: Set up MinGW (GCC for Windows)
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x86 # SAMP-плагины строго 32-битные
 
-    - name: Build Plugin
-      run: cmake --build build --config Release
+    - name: Compile and Link Plugin (.dll)
+      run: |
+        mkdir bin
+        # 1. Компилируем исходники в объектные файлы .o (флаг -w скрывает предупреждения, как у автора)
+        g++ -m32 -c -O2 -w -std=c++11 src/SDK/*.cpp -Isrc -Isrc/SDK
+        g++ -m32 -c -O2 -w -std=c++11 src/*.cpp -Isrc -Isrc/SDK
+        
+        # 2. Линкуем все файлы .o в один готовый Windows плагин .dll
+        g++ -m32 -shared -O3 -o bin/DisableVehicleLimit.dll *.o
+        
+        # 3. Очищаем лишний мусор
+        rm *.o
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: samp-plugin-windows
-        path: build/Release/*.dll # Ищет готовый .dll файл в папке сборки
+        path: bin/DisableVehicleLimit.dll
