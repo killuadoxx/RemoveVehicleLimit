@@ -1,0 +1,26 @@
+name: Build Windows Plugin
+
+on:
+  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Скачает сторонние зависимости плагина, если они есть
+
+    - name: Configure CMake
+      run: cmake -B build -A Win32 # SAMP-плагины почти всегда 32-битные (Win32)
+
+    - name: Build Plugin
+      run: cmake --build build --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: samp-plugin-windows
+        path: build/Release/*.dll # Ищет готовый .dll файл в папке сборки
