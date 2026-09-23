@@ -16,23 +16,25 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up MinGW (GCC for Windows)
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x86 # SAMP-плагины строго 32-битные
-
     - name: Compile and Link Plugin (.dll)
+      shell: bash
       run: |
-        mkdir bin
-        # 1. Компилируем исходники в объектные файлы .o (флаг -w скрывает предупреждения, как у автора)
+        mkdir -p bin
+        
+        # Используем предустановленный в Windows-раннер компилятор g++
+        export PATH="/c/msys64/mingw32/bin:$PATH"
+        
+        echo "=== Сборка SDK ==="
         g++ -m32 -c -O2 -w -std=c++11 src/SDK/*.cpp -Isrc -Isrc/SDK
+        
+        echo "=== Сборка плагина ==="
         g++ -m32 -c -O2 -w -std=c++11 src/*.cpp -Isrc -Isrc/SDK
         
-        # 2. Линкуем все файлы .o в один готовый Windows плагин .dll
+        echo "=== Линковка DLL ==="
         g++ -m32 -shared -O3 -o bin/DisableVehicleLimit.dll *.o
         
-        # 3. Очищаем лишний мусор
         rm *.o
+        echo "=== Готово! ==="
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
