@@ -21,14 +21,17 @@ jobs:
       run: |
         mkdir -p bin
         
-        # Используем предустановленный в Windows-раннер компилятор g++
+        # Подключаем встроенный 32-битный компилятор
         export PATH="/c/msys64/mingw32/bin:$PATH"
         
+        # Добавляем флаг -include cstdint -include cstddef, чтобы починить ошибки SAMP SDK
+        FIX_FLAGS="-include cstdint -include cstddef"
+        
         echo "=== Сборка SDK ==="
-        g++ -m32 -c -O2 -w -std=c++11 src/SDK/*.cpp -Isrc -Isrc/SDK
+        g++ -m32 -c -O2 -w -std=c++11 $FIX_FLAGS src/SDK/*.cpp -Isrc -Isrc/SDK
         
         echo "=== Сборка плагина ==="
-        g++ -m32 -c -O2 -w -std=c++11 src/*.cpp -Isrc -Isrc/SDK
+        g++ -m32 -c -O2 -w -std=c++11 $FIX_FLAGS src/*.cpp -Isrc -Isrc/SDK
         
         echo "=== Линковка DLL ==="
         g++ -m32 -shared -O3 -o bin/DisableVehicleLimit.dll *.o
